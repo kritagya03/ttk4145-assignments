@@ -31,8 +31,8 @@ const (
 )
 
 type ButtonEvent struct {
-	Floor  int
-	Button ButtonType
+	Floor          int
+	ButtonCallType ButtonType
 }
 
 func Init(addr string, numFloors int) {
@@ -69,7 +69,7 @@ func SetDoorOpenLamp(value bool) {
 func SetStopLamp(value bool) {
 	write([4]byte{5, toByte(value), 0, 0})
 }
-ElevatorBehaviour
+
 func PollButtons(receiver chan<- ButtonEvent) {
 	prev := make([][3]bool, _numFloors)
 	for {
