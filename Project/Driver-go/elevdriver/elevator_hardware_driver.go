@@ -1,4 +1,4 @@
-package elevio
+package elevdriver
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 const _pollRate = 20 * time.Millisecond
 
 var _initialized bool = false
-var _numFloors int = 4
+var _floorCount int = 4
 var _mtx sync.Mutex
 var _conn net.Conn
 
@@ -35,12 +35,12 @@ type ButtonEvent struct {
 	ButtonCallType ButtonType
 }
 
-func Init(addr string, numFloors int) {
+func Initialize(addr string, floorCount int) {
 	if _initialized {
 		fmt.Println("Driver already initialized!")
 		return
 	}
-	_numFloors = numFloors
+	_floorCount = floorCount
 	_mtx = sync.Mutex{}
 	var err error
 	_conn, err = net.Dial("tcp", addr)
@@ -70,11 +70,11 @@ func SetStopLamp(value bool) {
 	write([4]byte{5, toByte(value), 0, 0})
 }
 
-func PollButtons(receiver chan<- ButtonEvent) {
-	prev := make([][3]bool, _numFloors)
+func PollCallButtons(receiver chan<- ButtonEvent) {
+	prev := make([][3]bool, _floorCount)
 	for {
 		time.Sleep(_pollRate)
-		for f := 0; f < _numFloors; f++ {
+		for f := 0; f < _floorCount; f++ {
 			for b := ButtonType(0); b < 3; b++ {
 				v := GetButton(b, f)
 				if v != prev[f][b] && v != false {

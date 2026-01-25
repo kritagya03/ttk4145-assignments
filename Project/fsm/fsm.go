@@ -1,7 +1,7 @@
 package fsm
 
 import (
-	"Driver-go/elevio"
+	"Driver-go/elevdriver"
 	"fmt"
 	"project/elevator"
 	"time"
@@ -19,9 +19,9 @@ var doorTimer *time.Timer
 
 // SetAllLights sets the button lamps based on requests
 func SetAllLights(e elevator.Elevator) {
-	for f := 0; f < elevator.NumFloors; f++ {
-		for btn := 0; btn < elevator.NumButtonTypes; btn++ {
-			elevio.SetButtonLamp(elevio.ButtonType(btn), f, e.Requests[f][btn])
+	for f := 0; f < elevator.FloorCount; f++ {
+		for btn := 0; btn < elevator.CallButtonTypesCount; btn++ {
+			elevdriver.SetButtonLamp(elevdriver.ButtonType(btn), f, e.Requests[f][btn])
 		}
 	}
 	fmt.Println("SetAllLights: updated all lights from e.Requests.")
@@ -30,13 +30,13 @@ func SetAllLights(e elevator.Elevator) {
 // OnInitializeBetweenFloors moves the elevator down if it starts between floors
 func OnInitializeBetweenFloors(e *elevator.Elevator) {
 	fmt.Println("OnInitializeBetweenFloors: wanting to move down.")
-	elevio.SetMotorDirection(elevio.MD_Down)
-	e.Direction = elevio.MD_Down
+	elevdriver.SetMotorDirection(elevdriver.MD_Down)
+	e.Direction = elevdriver.MD_Down
 	e.Behaviour = elevator.EB_Moving
 }
 
 // OnRequestButtonPress handles button presses
-func OnRequestButtonPress(btnEvent elevio.ButtonEvent, e *elevator.Elevator, doorTimerReset chan<- bool) {
+func OnRequestButtonPress(btnEvent elevdriver.ButtonEvent, e *elevator.Elevator, doorTimerReset chan<- bool) {
 	fmt.Printf("\n\n%s(%d, %d)\n", "OnRequestButtonPress", btnEvent.Floor, btnEvent.ButtonCallType)
 	e.Print()
 
@@ -65,12 +65,12 @@ func OnRequestButtonPress(btnEvent elevio.ButtonEvent, e *elevator.Elevator, doo
 
 		switch directionBehaviourPair.Behaviour {
 		case elevator.EB_DoorOpen:
-			elevio.SetDoorOpenLamp(true)
+			elevdriver.SetDoorOpenLamp(true)
 			doorTimerReset <- true
 			e.ClearAtCurrentFloor()
 			fmt.Println("OnRequestButtonPress - EB_Idle - New behaviour is EB_DoorOpen: Opened door, wanting to start the timer, maybe remove order(s) at floor if possible.")
 		case elevator.EB_Moving:
-			elevio.SetMotorDirection(e.Direction)
+			elevdriver.SetMotorDirection(e.Direction)
 			fmt.Println("OnRequestButtonPress - EB_Idle - New behaviour is EB_Moving: set the motor direction: ", e.Direction)
 		case elevator.EB_Idle:
 			// Do nothing
@@ -91,14 +91,14 @@ func OnFloorArrival(newFloor int, e *elevator.Elevator, doorTimerReset chan<- bo
 
 	fmt.Println("OnFloorArrival: wanting to set floor indicator.")
 	e.Floor = newFloor
-	elevio.SetFloorIndicator(e.Floor)
+	elevdriver.SetFloorIndicator(e.Floor)
 
 	switch e.Behaviour {
 	case elevator.EB_Moving:
 		if e.ShouldStop() {
 			fmt.Println("OnFloorArrival - EB_Moving - e.ShouldStop()==True: wanting to stop, open door, maybe clear order(s) at floor, reset timer, update lights.")
-			elevio.SetMotorDirection(elevio.MD_Stop)
-			elevio.SetDoorOpenLamp(true)
+			elevdriver.SetMotorDirection(elevdriver.MD_Stop)
+			elevdriver.SetDoorOpenLamp(true)
 			e.ClearAtCurrentFloor()
 			doorTimerReset <- true
 			SetAllLights(*e)
@@ -134,8 +134,8 @@ func OnDoorTimeout(e *elevator.Elevator, doorTimerReset chan<- bool) {
 			SetAllLights(*e)
 		case elevator.EB_Moving, elevator.EB_Idle:
 			fmt.Printf("OnDoorTimeout - EB_DoorOpen - new behaviour is %v: opening door, setting direction %v.\n", e.Behaviour, e.Direction)
-			elevio.SetDoorOpenLamp(false)
-			elevio.SetMotorDirection(e.Direction)
+			elevdriver.SetDoorOpenLamp(false)
+			elevdriver.SetMotorDirection(e.Direction)
 		}
 
 	default:
